@@ -63,9 +63,13 @@ async function main() {
     console.log(`  - Status: ${result.status}`);
 
     if (result.status === 'success') {
-      console.log(`  - Story Image: ${result.result.storyImagePath}`);
-      console.log(`  - Infographic: ${result.result.infographicPath}`);
-      console.log(`  - Sections processed: ${result.result.extractedSections}/${result.result.totalSections}`);
+      console.log(`\n  Story Images:`);
+      console.log(`    - Imagen4: ${result.result.storyImageImagen}`);
+      console.log(`    - Nano Banana: ${result.result.storyImageNanoBanana}`);
+      console.log(`\n  Infographics:`);
+      console.log(`    - Imagen4: ${result.result.infographicImagen}`);
+      console.log(`    - Nano Banana: ${result.result.infographicNanoBanana}`);
+      console.log(`\n  - Sections processed: ${result.result.extractedSections}/${result.result.totalSections}`);
     } else if (result.status === 'failed') {
       console.error(`  - Error: ${result.error}`);
     } else {

@@ -2,6 +2,7 @@ import { createWorkflow, createStep } from '@mastra/core/workflows';
 import { z } from 'zod';
 import { jsonExtractorTool } from '../tools/json-extractor.js';
 import { imagen4GeneratorTool } from '../tools/imagen4-generator.js';
+import { nanoBananaGeneratorTool } from '../tools/nano-banana-generator.js';
 import { promptGeneratorAgent } from '../agents/prompt-generator.js';
 import { infographicGeneratorAgent } from '../agents/infographic-generator.js';
 
@@ -13,8 +14,10 @@ const workflowInputSchema = z.object({
 
 // Define the workflow output schema
 const workflowOutputSchema = z.object({
-  storyImagePath: z.string(),
-  infographicPath: z.string(),
+  storyImageImagen: z.string(),
+  storyImageNanoBanana: z.string(),
+  infographicImagen: z.string(),
+  infographicNanoBanana: z.string(),
   success: z.boolean(),
   extractedSections: z.number(),
   totalSections: z.number(),
@@ -94,8 +97,8 @@ const generateStoryPromptStep = createStep({
 });
 
 // Step 3: Generate story image with Imagen4
-const generateStoryImageStep = createStep({
-  id: 'generate-story-image',
+const generateStoryImageImagen = createStep({
+  id: 'generate-story-image-imagen',
   inputSchema: z.object({
     storyPrompt: z.string(),
     paperId: z.string(),
@@ -103,7 +106,8 @@ const generateStoryImageStep = createStep({
     extractedSections: z.number(),
   }),
   outputSchema: z.object({
-    storyImagePath: z.string(),
+    storyImageImagen: z.string(),
+    storyPrompt: z.string(),
     paperId: z.string(),
     totalSections: z.number(),
     extractedSections: z.number(),
@@ -113,7 +117,7 @@ const generateStoryImageStep = createStep({
 
     console.log('🎨 Step 3: Generating story image with Imagen4...');
 
-    const outputPath = `./images/arxiv/${paperId}-story.png`;
+    const outputPath = `./images/arxiv/${paperId}-story-imagen.png`;
 
     const result = await imagen4GeneratorTool.execute({
       context: {
@@ -123,11 +127,12 @@ const generateStoryImageStep = createStep({
       runtimeContext,
     });
 
-    console.log(`✓ Story image generated successfully!`);
+    console.log(`✓ Story image (Imagen4) generated successfully!`);
     console.log(`✓ Saved to: ${result.imagePath}\n`);
 
     return {
-      storyImagePath: result.imagePath,
+      storyImageImagen: result.imagePath,
+      storyPrompt,
       paperId,
       totalSections,
       extractedSections,
@@ -135,30 +140,77 @@ const generateStoryImageStep = createStep({
   },
 });
 
-// Step 4: Generate infographic prompt using AI agent
+// Step 4: Generate story image with Nano Banana
+const generateStoryImageNanoBanana = createStep({
+  id: 'generate-story-image-nano-banana',
+  inputSchema: z.object({
+    storyPrompt: z.string(),
+    storyImageImagen: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  outputSchema: z.object({
+    storyImageNanoBanana: z.string(),
+    storyImageImagen: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  execute: async ({ inputData, runtimeContext }) => {
+    const { storyPrompt, storyImageImagen, paperId, totalSections, extractedSections } = inputData;
+
+    console.log('🍌 Step 4: Generating story image with Nano Banana...');
+
+    const outputPath = `./images/arxiv/${paperId}-story-nanobanana.png`;
+
+    const result = await nanoBananaGeneratorTool.execute({
+      context: {
+        prompt: storyPrompt,
+        outputPath,
+      },
+      runtimeContext,
+    });
+
+    console.log(`✓ Story image (Nano Banana) generated successfully!`);
+    console.log(`✓ Saved to: ${result.imagePath}\n`);
+
+    return {
+      storyImageNanoBanana: result.imagePath,
+      storyImageImagen,
+      paperId,
+      totalSections,
+      extractedSections,
+    };
+  },
+});
+
+// Step 5: Generate infographic prompt using AI agent
 const generateInfographicPromptStep = createStep({
   id: 'generate-infographic-prompt',
   inputSchema: z.object({
-    storyImagePath: z.string(),
+    storyImageImagen: z.string(),
+    storyImageNanoBanana: z.string(),
     paperId: z.string(),
     totalSections: z.number(),
     extractedSections: z.number(),
   }),
   outputSchema: z.object({
     infographicPrompt: z.string(),
-    storyImagePath: z.string(),
+    storyImageImagen: z.string(),
+    storyImageNanoBanana: z.string(),
     paperId: z.string(),
     totalSections: z.number(),
     extractedSections: z.number(),
   }),
   execute: async ({ inputData, getStepResult }) => {
-    const { storyImagePath, paperId, totalSections, extractedSections } = inputData;
+    const { storyImageImagen, storyImageNanoBanana, paperId, totalSections, extractedSections } = inputData;
 
     // Get the original extracted text from step 1
     const extractResult = getStepResult(extractJsonStep);
     const extractedText = extractResult.extractedText;
 
-    console.log('📊 Step 4: Generating infographic prompt with Gemini Flash 2.5...');
+    console.log('📊 Step 5: Generating infographic prompt with Gemini Flash 2.5...');
     console.log(`Input text preview: ${extractedText.substring(0, 200)}...\n`);
 
     const agentResponse = await infographicGeneratorAgent.generate(
@@ -172,7 +224,8 @@ const generateInfographicPromptStep = createStep({
 
     return {
       infographicPrompt,
-      storyImagePath,
+      storyImageImagen,
+      storyImageNanoBanana,
       paperId,
       totalSections,
       extractedSections,
@@ -180,29 +233,32 @@ const generateInfographicPromptStep = createStep({
   },
 });
 
-// Step 5: Generate infographic image with Imagen4
-const generateInfographicImageStep = createStep({
-  id: 'generate-infographic-image',
+// Step 6: Generate infographic image with Imagen4
+const generateInfographicImageImagen = createStep({
+  id: 'generate-infographic-image-imagen',
   inputSchema: z.object({
     infographicPrompt: z.string(),
-    storyImagePath: z.string(),
+    storyImageImagen: z.string(),
+    storyImageNanoBanana: z.string(),
     paperId: z.string(),
     totalSections: z.number(),
     extractedSections: z.number(),
   }),
   outputSchema: z.object({
-    infographicPath: z.string(),
-    storyImagePath: z.string(),
-    success: z.boolean(),
+    infographicImagen: z.string(),
+    infographicPrompt: z.string(),
+    storyImageImagen: z.string(),
+    storyImageNanoBanana: z.string(),
+    paperId: z.string(),
     totalSections: z.number(),
     extractedSections: z.number(),
   }),
   execute: async ({ inputData, runtimeContext }) => {
-    const { infographicPrompt, storyImagePath, paperId, totalSections, extractedSections } = inputData;
+    const { infographicPrompt, storyImageImagen, storyImageNanoBanana, paperId, totalSections, extractedSections } = inputData;
 
-    console.log('📈 Step 5: Generating infographic with Imagen4...');
+    console.log('📈 Step 6: Generating infographic with Imagen4...');
 
-    const outputPath = `./images/arxiv/${paperId}-infographic.png`;
+    const outputPath = `./images/arxiv/${paperId}-infographic-imagen.png`;
 
     const result = await imagen4GeneratorTool.execute({
       context: {
@@ -212,12 +268,65 @@ const generateInfographicImageStep = createStep({
       runtimeContext,
     });
 
-    console.log(`✓ Infographic generated successfully!`);
+    console.log(`✓ Infographic (Imagen4) generated successfully!`);
     console.log(`✓ Saved to: ${result.imagePath}\n`);
 
     return {
-      infographicPath: result.imagePath,
-      storyImagePath,
+      infographicImagen: result.imagePath,
+      infographicPrompt,
+      storyImageImagen,
+      storyImageNanoBanana,
+      paperId,
+      totalSections,
+      extractedSections,
+    };
+  },
+});
+
+// Step 7: Generate infographic image with Nano Banana
+const generateInfographicImageNanoBanana = createStep({
+  id: 'generate-infographic-image-nano-banana',
+  inputSchema: z.object({
+    infographicPrompt: z.string(),
+    infographicImagen: z.string(),
+    storyImageImagen: z.string(),
+    storyImageNanoBanana: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  outputSchema: z.object({
+    infographicNanoBanana: z.string(),
+    infographicImagen: z.string(),
+    storyImageImagen: z.string(),
+    storyImageNanoBanana: z.string(),
+    success: z.boolean(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  execute: async ({ inputData, runtimeContext }) => {
+    const { infographicPrompt, infographicImagen, storyImageImagen, storyImageNanoBanana, paperId, totalSections, extractedSections } = inputData;
+
+    console.log('🍌 Step 7: Generating infographic with Nano Banana...');
+
+    const outputPath = `./images/arxiv/${paperId}-infographic-nanobanana.png`;
+
+    const result = await nanoBananaGeneratorTool.execute({
+      context: {
+        prompt: infographicPrompt,
+        outputPath,
+      },
+      runtimeContext,
+    });
+
+    console.log(`✓ Infographic (Nano Banana) generated successfully!`);
+    console.log(`✓ Saved to: ${result.imagePath}\n`);
+
+    return {
+      infographicNanoBanana: result.imagePath,
+      infographicImagen,
+      storyImageImagen,
+      storyImageNanoBanana,
       success: result.success,
       totalSections,
       extractedSections,
@@ -251,14 +360,26 @@ export const arxivImageWorkflow = createWorkflow({
       extractedSections: promptResult.extractedSections,
     };
   })
-  .then(generateStoryImageStep)
+  .then(generateStoryImageImagen)
   .map(async ({ getStepResult }) => {
-    const imageResult = getStepResult(generateStoryImageStep);
+    const imagenResult = getStepResult(generateStoryImageImagen);
     return {
-      storyImagePath: imageResult.storyImagePath,
-      paperId: imageResult.paperId,
-      totalSections: imageResult.totalSections,
-      extractedSections: imageResult.extractedSections,
+      storyPrompt: imagenResult.storyPrompt,
+      storyImageImagen: imagenResult.storyImageImagen,
+      paperId: imagenResult.paperId,
+      totalSections: imagenResult.totalSections,
+      extractedSections: imagenResult.extractedSections,
+    };
+  })
+  .then(generateStoryImageNanoBanana)
+  .map(async ({ getStepResult }) => {
+    const nanoBananaResult = getStepResult(generateStoryImageNanoBanana);
+    return {
+      storyImageImagen: nanoBananaResult.storyImageImagen,
+      storyImageNanoBanana: nanoBananaResult.storyImageNanoBanana,
+      paperId: nanoBananaResult.paperId,
+      totalSections: nanoBananaResult.totalSections,
+      extractedSections: nanoBananaResult.extractedSections,
     };
   })
   .then(generateInfographicPromptStep)
@@ -266,11 +387,25 @@ export const arxivImageWorkflow = createWorkflow({
     const infographicPromptResult = getStepResult(generateInfographicPromptStep);
     return {
       infographicPrompt: infographicPromptResult.infographicPrompt,
-      storyImagePath: infographicPromptResult.storyImagePath,
+      storyImageImagen: infographicPromptResult.storyImageImagen,
+      storyImageNanoBanana: infographicPromptResult.storyImageNanoBanana,
       paperId: infographicPromptResult.paperId,
       totalSections: infographicPromptResult.totalSections,
       extractedSections: infographicPromptResult.extractedSections,
     };
   })
-  .then(generateInfographicImageStep)
+  .then(generateInfographicImageImagen)
+  .map(async ({ getStepResult }) => {
+    const infographicImagenResult = getStepResult(generateInfographicImageImagen);
+    return {
+      infographicPrompt: infographicImagenResult.infographicPrompt,
+      infographicImagen: infographicImagenResult.infographicImagen,
+      storyImageImagen: infographicImagenResult.storyImageImagen,
+      storyImageNanoBanana: infographicImagenResult.storyImageNanoBanana,
+      paperId: infographicImagenResult.paperId,
+      totalSections: infographicImagenResult.totalSections,
+      extractedSections: infographicImagenResult.extractedSections,
+    };
+  })
+  .then(generateInfographicImageNanoBanana)
   .commit();
