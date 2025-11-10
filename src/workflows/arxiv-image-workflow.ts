@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { jsonExtractorTool } from '../tools/json-extractor.js';
 import { imagen4GeneratorTool } from '../tools/imagen4-generator.js';
 import { promptGeneratorAgent } from '../agents/prompt-generator.js';
+import { infographicGeneratorAgent } from '../agents/infographic-generator.js';
 
 // Define the workflow input schema
 const workflowInputSchema = z.object({
@@ -12,7 +13,8 @@ const workflowInputSchema = z.object({
 
 // Define the workflow output schema
 const workflowOutputSchema = z.object({
-  imagePath: z.string(),
+  storyImagePath: z.string(),
+  infographicPath: z.string(),
   success: z.boolean(),
   extractedSections: z.number(),
   totalSections: z.number(),
@@ -52,71 +54,173 @@ const extractJsonStep = createStep({
   },
 });
 
-// Step 2: Generate image prompt using AI agent
-const generatePromptStep = createStep({
-  id: 'generate-prompt',
+// Step 2: Generate story image prompt using AI agent
+const generateStoryPromptStep = createStep({
+  id: 'generate-story-prompt',
   inputSchema: z.object({
     extractedText: z.string(),
     paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
   }),
   outputSchema: z.object({
-    imagePrompt: z.string(),
+    storyPrompt: z.string(),
     paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
   }),
   execute: async ({ inputData }) => {
-    const { extractedText, paperId } = inputData;
+    const { extractedText, paperId, totalSections, extractedSections } = inputData;
 
-    console.log('🤖 Step 2: Generating image prompt with Gemini Flash 2.5...');
+    console.log('🎬 Step 2: Generating story image prompt with Gemini Flash 2.5...');
     console.log(`Input text preview: ${extractedText.substring(0, 200)}...\n`);
 
     const agentResponse = await promptGeneratorAgent.generate(
       `Based on the following arXiv paper content, create a highly detailed, creative, and imaginative image prompt that would produce a stunning visual representation:\n\n${extractedText}`
     );
 
-    const imagePrompt = agentResponse.text;
+    const storyPrompt = agentResponse.text;
 
-    console.log('✓ Generated image prompt:');
-    console.log(`"${imagePrompt}"\n`);
+    console.log('✓ Generated story image prompt:');
+    console.log(`"${storyPrompt}"\n`);
 
     return {
-      imagePrompt,
-      paperId, // Pass through paperId
+      storyPrompt,
+      paperId,
+      totalSections,
+      extractedSections,
     };
   },
 });
 
-// Step 3: Generate image with Imagen4
-const generateImageStep = createStep({
-  id: 'generate-image',
+// Step 3: Generate story image with Imagen4
+const generateStoryImageStep = createStep({
+  id: 'generate-story-image',
   inputSchema: z.object({
-    imagePrompt: z.string(),
+    storyPrompt: z.string(),
     paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
   }),
   outputSchema: z.object({
-    imagePath: z.string(),
-    success: z.boolean(),
+    storyImagePath: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
   }),
   execute: async ({ inputData, runtimeContext }) => {
-    const { imagePrompt, paperId } = inputData;
+    const { storyPrompt, paperId, totalSections, extractedSections } = inputData;
 
-    console.log('🎨 Step 3: Generating image with Imagen4...');
+    console.log('🎨 Step 3: Generating story image with Imagen4...');
 
-    const outputPath = `./images/arxiv/${paperId}.png`;
+    const outputPath = `./images/arxiv/${paperId}-story.png`;
 
     const result = await imagen4GeneratorTool.execute({
       context: {
-        prompt: imagePrompt,
+        prompt: storyPrompt,
         outputPath,
       },
       runtimeContext,
     });
 
-    console.log(`✓ Image generated successfully!`);
+    console.log(`✓ Story image generated successfully!`);
     console.log(`✓ Saved to: ${result.imagePath}\n`);
 
     return {
-      imagePath: result.imagePath,
+      storyImagePath: result.imagePath,
+      paperId,
+      totalSections,
+      extractedSections,
+    };
+  },
+});
+
+// Step 4: Generate infographic prompt using AI agent
+const generateInfographicPromptStep = createStep({
+  id: 'generate-infographic-prompt',
+  inputSchema: z.object({
+    storyImagePath: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  outputSchema: z.object({
+    infographicPrompt: z.string(),
+    storyImagePath: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  execute: async ({ inputData, getStepResult }) => {
+    const { storyImagePath, paperId, totalSections, extractedSections } = inputData;
+
+    // Get the original extracted text from step 1
+    const extractResult = getStepResult(extractJsonStep);
+    const extractedText = extractResult.extractedText;
+
+    console.log('📊 Step 4: Generating infographic prompt with Gemini Flash 2.5...');
+    console.log(`Input text preview: ${extractedText.substring(0, 200)}...\n`);
+
+    const agentResponse = await infographicGeneratorAgent.generate(
+      `Based on the following arXiv paper content, create a highly detailed infographic prompt that would produce a comprehensive, data-rich visual summary:\n\n${extractedText}`
+    );
+
+    const infographicPrompt = agentResponse.text;
+
+    console.log('✓ Generated infographic prompt:');
+    console.log(`"${infographicPrompt}"\n`);
+
+    return {
+      infographicPrompt,
+      storyImagePath,
+      paperId,
+      totalSections,
+      extractedSections,
+    };
+  },
+});
+
+// Step 5: Generate infographic image with Imagen4
+const generateInfographicImageStep = createStep({
+  id: 'generate-infographic-image',
+  inputSchema: z.object({
+    infographicPrompt: z.string(),
+    storyImagePath: z.string(),
+    paperId: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  outputSchema: z.object({
+    infographicPath: z.string(),
+    storyImagePath: z.string(),
+    success: z.boolean(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+  }),
+  execute: async ({ inputData, runtimeContext }) => {
+    const { infographicPrompt, storyImagePath, paperId, totalSections, extractedSections } = inputData;
+
+    console.log('📈 Step 5: Generating infographic with Imagen4...');
+
+    const outputPath = `./images/arxiv/${paperId}-infographic.png`;
+
+    const result = await imagen4GeneratorTool.execute({
+      context: {
+        prompt: infographicPrompt,
+        outputPath,
+      },
+      runtimeContext,
+    });
+
+    console.log(`✓ Infographic generated successfully!`);
+    console.log(`✓ Saved to: ${result.imagePath}\n`);
+
+    return {
+      infographicPath: result.imagePath,
+      storyImagePath,
       success: result.success,
+      totalSections,
+      extractedSections,
     };
   },
 });
@@ -133,15 +237,40 @@ export const arxivImageWorkflow = createWorkflow({
     return {
       extractedText: extractResult.extractedText,
       paperId: extractResult.paperId,
+      totalSections: extractResult.totalSections,
+      extractedSections: extractResult.extractedSections,
     };
   })
-  .then(generatePromptStep)
+  .then(generateStoryPromptStep)
   .map(async ({ getStepResult }) => {
-    const promptResult = getStepResult(generatePromptStep);
+    const promptResult = getStepResult(generateStoryPromptStep);
     return {
-      imagePrompt: promptResult.imagePrompt,
+      storyPrompt: promptResult.storyPrompt,
       paperId: promptResult.paperId,
+      totalSections: promptResult.totalSections,
+      extractedSections: promptResult.extractedSections,
     };
   })
-  .then(generateImageStep)
+  .then(generateStoryImageStep)
+  .map(async ({ getStepResult }) => {
+    const imageResult = getStepResult(generateStoryImageStep);
+    return {
+      storyImagePath: imageResult.storyImagePath,
+      paperId: imageResult.paperId,
+      totalSections: imageResult.totalSections,
+      extractedSections: imageResult.extractedSections,
+    };
+  })
+  .then(generateInfographicPromptStep)
+  .map(async ({ getStepResult }) => {
+    const infographicPromptResult = getStepResult(generateInfographicPromptStep);
+    return {
+      infographicPrompt: infographicPromptResult.infographicPrompt,
+      storyImagePath: infographicPromptResult.storyImagePath,
+      paperId: infographicPromptResult.paperId,
+      totalSections: infographicPromptResult.totalSections,
+      extractedSections: infographicPromptResult.extractedSections,
+    };
+  })
+  .then(generateInfographicImageStep)
   .commit();

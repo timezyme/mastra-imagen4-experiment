@@ -1,6 +1,7 @@
 import { Mastra } from '@mastra/core';
 import { config, validateConfig } from './config.js';
 import { promptGeneratorAgent } from './agents/prompt-generator.js';
+import { infographicGeneratorAgent } from './agents/infographic-generator.js';
 import { arxivImageWorkflow } from './workflows/arxiv-image-workflow.js';
 
 async function main() {
@@ -20,13 +21,14 @@ async function main() {
   const mastra = new Mastra({
     agents: {
       [promptGeneratorAgent.name]: promptGeneratorAgent,
+      [infographicGeneratorAgent.name]: infographicGeneratorAgent,
     },
     workflows: {
       [arxivImageWorkflow.id]: arxivImageWorkflow,
     },
   });
 
-  console.log('✓ Mastra initialized with agents and workflows\n');
+  console.log('✓ Mastra initialized with 2 agents and workflow\n');
 
   // Example usage - you can modify these parameters
   const jsonFilePath = process.env.JSON_FILE_PATH || './arxiv/2502.14902/sections-extract.json';
@@ -61,7 +63,8 @@ async function main() {
     console.log(`  - Status: ${result.status}`);
 
     if (result.status === 'success') {
-      console.log(`  - Image saved to: ${result.result.imagePath}`);
+      console.log(`  - Story Image: ${result.result.storyImagePath}`);
+      console.log(`  - Infographic: ${result.result.infographicPath}`);
       console.log(`  - Sections processed: ${result.result.extractedSections}/${result.result.totalSections}`);
     } else if (result.status === 'failed') {
       console.error(`  - Error: ${result.error}`);
