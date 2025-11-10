@@ -143,4 +143,5 @@ export const arxivImageWorkflow = createWorkflow({
       paperId: promptResult.paperId,
     };
   })
-  .then(generateImageStep);
+  .then(generateImageStep)
+  .commit();
