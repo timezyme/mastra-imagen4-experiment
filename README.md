@@ -5,8 +5,14 @@ A Mastra.ai workflow application that processes arXiv paper JSON extracts and ge
 ## Features
 
 - **Step 1**: Extract configurable number of lines from arXiv paper JSON using a Mastra Tool
-- **Step 2**: Generate detailed, creative image prompts using a Mastra Agent powered by Gemini Flash 2.5
-- **Step 3**: Create stunning images with Imagen4 (imagen-4.0-generate-001) and save as PNG
+- **Step 2**: Generate narrative-driven story image prompt using Agent #1 (Gemini Flash 2.5)
+- **Step 3**: Create story image with Imagen4 - captures the research journey and impact
+- **Step 4**: Generate detailed infographic prompt using Agent #2 (Gemini Flash 2.5)
+- **Step 5**: Create comprehensive infographic with Imagen4 - data-rich visual summary
+
+**Output**: Two complementary images per paper:
+1. **Story Image** (`*-story.png`): Narrative-driven visual storytelling showing problem → solution → impact
+2. **Infographic** (`*-infographic.png`): Highly detailed, data-rich visual with charts, graphs, and technical details
 
 ## Architecture
 
@@ -19,9 +25,10 @@ src/
 │   ├── json-extractor.ts         # Tool for extracting text from JSON
 │   └── imagen4-generator.ts      # Tool for Imagen4 image generation
 ├── agents/
-│   └── prompt-generator.ts       # Agent using Gemini Flash 2.5
+│   ├── prompt-generator.ts       # Agent #1: Story image prompts
+│   └── infographic-generator.ts  # Agent #2: Infographic prompts
 ├── workflows/
-│   └── arxiv-image-workflow.ts   # 3-step workflow orchestration
+│   └── arxiv-image-workflow.ts   # 5-step workflow orchestration
 └── index.ts                       # Application entry point
 ```
 
@@ -121,16 +128,27 @@ All configuration is managed through environment variables in `.env`:
    - Extracts the first N lines (configurable) of text from article sections
    - Returns structured text for prompt generation
 
-2. **Prompt Generation Agent**
+2. **Story Prompt Generation Agent**
    - Uses Gemini Flash 2.5 (via Vertex AI)
    - Analyzes the extracted paper content
-   - Generates a highly detailed, creative image prompt (3-5 sentences)
-   - Designed to create visually stunning representations of research concepts
+   - Generates narrative-driven image prompt with visual storytelling elements
+   - Creates a story arc: problem → innovation → impact
 
-3. **Image Generation Tool**
+3. **Story Image Generation**
    - Uses Imagen 4 (imagen-4.0-generate-001) via Vertex AI REST API
-   - Generates high-quality images from the prompt
-   - Saves as PNG to `./images/arxiv/<paper-id>.png`
+   - Generates cinematic story image from the prompt
+   - Saves as PNG to `./images/arxiv/<paper-id>-story.png`
+
+4. **Infographic Prompt Generation Agent**
+   - Uses Gemini Flash 2.5 (via Vertex AI)
+   - Analyzes the same extracted paper content
+   - Generates detailed infographic prompt with data visualizations
+   - Specifies charts, graphs, icons, layouts, and technical details
+
+5. **Infographic Image Generation**
+   - Uses Imagen 4 (imagen-4.0-generate-001) via Vertex AI REST API
+   - Generates comprehensive infographic from the prompt
+   - Saves as PNG to `./images/arxiv/<paper-id>-infographic.png`
 
 ## Example Output
 
@@ -158,17 +176,31 @@ Starting workflow...
 ✓ Extracted 6 of 14 sections
 ✓ Extracted text length: 1234 characters
 
-🤖 Step 2: Generating image prompt with Gemini Flash 2.5...
-✓ Generated image prompt:
-"A futuristic digital landscape featuring..."
+🎬 Step 2: Generating story image prompt with Gemini Flash 2.5...
+✓ Generated story image prompt:
+"In a chaotic data landscape..."
 
-🎨 Step 3: Generating image with Imagen4...
-✓ Image generated successfully!
-✓ Saved to: ./images/arxiv/2502.14902.png
+🎨 Step 3: Generating story image with Imagen4...
+✓ Story image generated successfully!
+✓ Saved to: ./images/arxiv/2502.14902-story.png
+
+📊 Step 4: Generating infographic prompt with Gemini Flash 2.5...
+✓ Generated infographic prompt:
+"A comprehensive infographic poster..."
+
+📈 Step 5: Generating infographic with Imagen4...
+✓ Infographic generated successfully!
+✓ Saved to: ./images/arxiv/2502.14902-infographic.png
 
 ═══════════════════════════════════════════════════════
 
 ✅ Workflow completed successfully!
+
+📊 Results:
+  - Status: success
+  - Story Image: ./images/arxiv/2502.14902-story.png
+  - Infographic: ./images/arxiv/2502.14902-infographic.png
+  - Sections processed: 6/14
 ```
 
 ## Development Philosophy
