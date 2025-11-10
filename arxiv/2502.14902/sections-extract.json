@@ -1,0 +1,166 @@
+{
+  "article_sections": [
+    {
+      "id": "1",
+      "section": "# PathRAG: Pruning Graph-based Retrieval Augmented Generation with Relational Paths",
+      "section_highlights": [
+        "PathRAG: Pruning Graph-based Retrieval Augmented Generation with Relational Paths",
+        "Authors: Boyu Chen, Zirui Guo, Zidan Yang, Yuluo Chen, Junze Chen, Zhenghao Liu, Chuan Shi, Cheng Yang"
+      ],
+      "section_keywords": "PathRAG, Graph-based Retrieval, Augmented Generation, Relational Paths"
+    },
+    {
+      "id": "2",
+      "section": "## Abstract",
+      "section_highlights": [
+        "Retrieval-augmented generation (RAG) improves response quality of large language models (LLMs) by retrieving knowledge from external databases.",
+        "Graph-based RAG methods have limitations due to redundancy of retrieved information, not insufficiency.",
+        "PathRAG reduces redundant information with flow-based pruning and guides LLMs to generate more logical and coherent responses with path-based prompting.",
+        "PathRAG consistently outperforms state-of-the-art baselines across six datasets and five evaluation dimensions.",
+        "The code for PathRAG is available at https://github.com/BUPT-GAMMA/PathRAG"
+      ],
+      "section_keywords": "Retrieval-augmented generation, Graph-based RAG, PathRAG, Large Language Models, Knowledge Retrieval"
+    },
+    {
+      "id": "3",
+      "section": "## 1 Introduction",
+      "section_highlights": [
+        "Retrieval-augmented generation (RAG) enhances large language models (LLMs) by accessing external databases for up-to-date knowledge.",
+        "Graph-based RAG organizes textual information into an indexing graph to capture dependencies and relationships across texts.",
+        "PathRAG proposes a key path retrieval method to alleviate noise and reduce token consumption in RAG.",
+        "PathRAG outperforms state-of-the-art baselines across six datasets and five evaluation dimensions.",
+        "The limitations of current graph-based RAG methods lie in the redundancy of retrieved information and the use of a flat structure."
+      ],
+      "section_keywords": "Retrieval-Augmented Generation, Large Language Models, Graph-Based RAG, PathRAG, Key Path Retrieval, Noise Reduction, Token Consumption"
+    },
+    {
+      "id": "4",
+      "section": "## 2 Related Work",
+      "section_highlights": [
+        "Text-based RAG improves text quality and mitigates hallucination effects by leveraging external databases.",
+        "Text-based RAG can be broadly classified into two categories: sparse vector retrieval and dense vector retrieval.",
+        "Dense vector retrieval addresses issues like lexical mismatches and synonyms by encoding query terms and text into vector embeddings.",
+        "KG-RAG retrieves information from knowledge graphs, enabling LLMs to retrieve information of relevant entities and their relationships.",
+        "Graph-based RAG organizes text databases as text-associated graphs, focusing on global-level questions that need information from multiple segments across a database.",
+        "GraphRAG and LightRAG are two graph-based RAG methods that accelerate the retrieval process and handle global-level tasks effectively."
+      ],
+      "section_keywords": "text-based RAG, dense vector retrieval, KG-RAG, graph-based RAG, retrieval-augmented generation"
+    },
+    {
+      "id": "5",
+      "section": "## 3 Preliminaries",
+      "section_highlights": [
+        "Graph-based RAG system workflow is introduced and formalized.",
+        "Indexing graph is constructed from text database with entities and interrelations identified by LLMs.",
+        "Graph-oriented retriever extracts relevant nodes and edges in the indexing graph.",
+        "Augmented generation with retrieval results is denoted as $mathcal{A}(q, mathcal{G})$.",
+        "Designing an effective graph-oriented retriever and prompt template is the primary focus of this paper."
+      ],
+      "section_keywords": "graph-based RAG, indexing graph, graph-oriented retriever, LLMs, augmented generation"
+    },
+    {
+      "id": "6",
+      "section": "## 4 Methodology",
+      "section_highlights": [
+        "A novel graph-based RAG framework, PathRAG, is proposed for information retrieval.",
+        "The framework operates in three stages: node retrieval, path retrieval, and answer generation.",
+        "Node retrieval uses LLMs to extract keywords from the input query and retrieve related nodes from the indexing graph.",
+        "Path retrieval employs a flow-based pruning algorithm to extract key paths between retrieved nodes.",
+        "Answer generation prioritizes paths based on reliability and positions them to align with LLMs' performance patterns.",
+        "The framework addresses the 'lost in the middle' issue in long-context scenarios by positioning critical information at the template's ends."
+      ],
+      "section_keywords": "Graph-based RAG framework, PathRAG, node retrieval, path retrieval, answer generation, LLMs, information retrieval, flow-based pruning algorithm, reliability-based prioritization, long-context scenarios"
+    },
+    {
+      "id": "7",
+      "section": "## 5 Experiments",
+      "section_highlights": [
+        "PathRAG consistently outperforms the baselines across all evaluation dimensions and datasets.",
+        "PathRAG shows an average win rate of 60.88% in Comprehensiveness, 62.75% in Diversity, 59.78% in Logicality, 60.47% in Relevance, and 59.93% in Coherence.",
+        "The proposed path-based retrieval contributes to better performance across multiple aspects of the generated responses.",
+        "PathRAG reduces 16% token cost with much better performance, and the corresponding monetary cost is only $0.002.",
+        "PathRAG-lt reduces 44% tokens while maintaining comparable performance to LightRAG."
+      ],
+      "section_keywords": "PathRAG, RAG, evaluation, win rate, token cost, hyperparameters, ablation study, case study, LLM, GPT-4o-mini"
+    },
+    {
+      "id": "8",
+      "section": "## 6 Conclusion",
+      "section_highlights": [
+        "PathRAG is a novel graph-based RAG method that retrieves key relational paths",
+        "PathRAG efficiently identifies key paths with a flow-based pruning algorithm",
+        "PathRAG generates answers with path-based LLM prompting",
+        "PathRAG consistently outperforms baseline methods on six datasets",
+        "Future work includes optimizing indexing graph construction and collecting more human-annotated datasets"
+      ],
+      "section_keywords": "PathRAG, graph-based RAG, relational paths, flow-based pruning, LLM prompting"
+    },
+    {
+      "id": "9",
+      "section": "## 7 Limitations",
+      "section_highlights": [
+        "The work focuses on retrieving information from an indexing graph for answering questions.",
+        "The indexing graph construction process is not explored for fair comparison with previous methods.",
+        "PathRAG involves no deep neural networks or parameter training for simplicity.",
+        "The evaluation metrics are relative rather than absolute.",
+        "Future work includes collecting more datasets and designing new metrics for graph-based RAG."
+      ],
+      "section_keywords": "indexing graph, graph-based RAG, path retrieval, evaluation metrics, future work"
+    },
+    {
+      "id": "10",
+      "section": "## A Dataset Descriptions",
+      "section_highlights": [
+        "Six datasets are used in the experiments, covering various domains.",
+        "Datasets include agriculture, legal, history, CS, biology, and mix.",
+        "Each dataset provides detailed information on its respective domain.",
+        "The datasets cover a wide range of topics, including practices, events, and figures.",
+        "The CS dataset focuses on machine learning and big data applications."
+      ],
+      "section_keywords": "dataset, domains, agriculture, legal, history, computer science, biology, machine learning, big data"
+    },
+    {
+      "id": "11",
+      "section": "## B Baseline Descriptions",
+      "section_highlights": [
+        "NaiveRAG uses text embeddings for efficient and direct access to answers.",
+        "HyDE shares a similar storage framework with NaiveRAG but uses an LLM to generate a hypothetical document for retrieval.",
+        "GraphRAG is a graph-based RAG that uses an LLM to extract entities and relationships from text, with community detection for summarization.",
+        "LightRAG is a graph-based RAG that employs a dual-level retrieval framework for more precise searches and reduced token and time consumption."
+      ],
+      "section_keywords": "NaiveRAG,HyDE,GraphRAG,LightRAG,LLM,text embeddings,community detection,dual-level retrieval"
+    },
+    {
+      "id": "12",
+      "section": "## C Evaluation Dimensions",
+      "section_highlights": [
+        "LLM evaluates RAG responses based on five dimensions: Comprehensiveness, Diversity, Logicality, Relevance, and Coherence.",
+        "Two path ordering methods: Random and Hop-first ordering are used to select K paths.",
+        "Two prompt formats: Flat organization and structured organization are used to arrange retrieved paths.",
+        "The goal of path ordering is to enhance memory retention by placing the most important paths at the end of the prompt.",
+        "The LLM assesses the relevance of paths based on the number of hops, with fewer hops indicating more direct relevance."
+      ],
+      "section_keywords": "evaluation dimensions, path ordering, prompt format, relevance, comprehension"
+    },
+    {
+      "id": "13",
+      "section": "## E Detailed Comparison between PathRAG-lt and LightRAG",
+      "section_highlights": [
+        "PathRAG-lt has a higher overall win rate compared to LightRAG",
+        "The win rates of PathRAG-lt and LightRAG are compared on six datasets",
+        "PathRAG-lt achieves an overall win rate of 50.69%"
+      ],
+      "section_keywords": "PathRAG-lt, LightRAG, win rates, comparison, datasets"
+    },
+    {
+      "id": "14",
+      "section": "## F Additional Case study",
+      "section_highlights": [
+        "Additional case study comparing PathRAG and LightRAG on the CS dataset",
+        "Generated responses evaluated by GPT-4o-mini",
+        "Derived features to enhance dataset's predictive power"
+      ],
+      "section_keywords": "case study, PathRAG, LightRAG, CS dataset, predictive power"
+    }
+  ]
+}

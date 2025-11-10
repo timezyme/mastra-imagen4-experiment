@@ -1,0 +1,33 @@
+{
+  "name": "mastra-arxiv-imagen4",
+  "version": "1.0.0",
+  "description": "Mastra.ai workflow for generating images from arXiv papers using Imagen4",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "mastra",
+    "vertex-ai",
+    "imagen4",
+    "arxiv",
+    "ai-workflow"
+  ],
+  "dependencies": {
+    "@ai-sdk/google-vertex": "^1.0.9",
+    "@mastra/core": "^0.2.15",
+    "ai": "^4.0.43",
+    "dotenv": "^16.4.7",
+    "google-auth-library": "^9.15.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
