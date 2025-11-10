@@ -5,20 +5,33 @@ import { writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
 import { config } from '../config.js';
 
+// Define schemas first
+const inputSchema = z.object({
+  prompt: z.string().describe('The text prompt to generate an image from'),
+  outputPath: z.string().describe('Path where the generated image should be saved'),
+  width: z.number().optional().describe('Image width (defaults to config value)'),
+  height: z.number().optional().describe('Image height (defaults to config value)'),
+});
+
+const outputSchema = z.object({
+  imagePath: z.string().describe('Path where the image was saved'),
+  success: z.boolean().describe('Whether the image generation was successful'),
+});
+
+// Define API response type
+interface Imagen4Response {
+  predictions: Array<{
+    bytesBase64Encoded: string;
+    mimeType?: string;
+  }>;
+}
+
 export const imagen4GeneratorTool = createTool({
   id: 'imagen4-generator',
   description: `Generate an image using Google's Imagen 4 model via Vertex AI. Takes a text prompt and generates a high-quality image.`,
-  inputSchema: z.object({
-    prompt: z.string().describe('The text prompt to generate an image from'),
-    outputPath: z.string().describe('Path where the generated image should be saved'),
-    width: z.number().optional().describe('Image width (defaults to config value)'),
-    height: z.number().optional().describe('Image height (defaults to config value)'),
-  }),
-  outputSchema: z.object({
-    imagePath: z.string().describe('Path where the image was saved'),
-    success: z.boolean().describe('Whether the image generation was successful'),
-  }),
-  execute: async ({ context }) => {
+  inputSchema,
+  outputSchema,
+  execute: async ({ context }: { context: z.infer<typeof inputSchema> }) => {
     const {
       prompt,
       outputPath,
@@ -79,7 +92,7 @@ export const imagen4GeneratorTool = createTool({
         throw new Error(`Imagen API request failed: ${response.status} ${errorText}`);
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as Imagen4Response;
 
       // Extract the base64-encoded image
       if (!result.predictions || result.predictions.length === 0) {

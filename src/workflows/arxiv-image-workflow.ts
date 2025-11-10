@@ -1,4 +1,4 @@
-import { Workflow, Step } from '@mastra/core';
+import { createWorkflow, createStep } from '@mastra/core/workflows';
 import { z } from 'zod';
 import { jsonExtractorTool } from '../tools/json-extractor.js';
 import { imagen4GeneratorTool } from '../tools/imagen4-generator.js';
@@ -10,19 +10,32 @@ const workflowInputSchema = z.object({
   paperId: z.string().describe('arXiv paper ID (e.g., 2502.14902)'),
 });
 
+// Define the workflow output schema
+const workflowOutputSchema = z.object({
+  imagePath: z.string(),
+  success: z.boolean(),
+  extractedSections: z.number(),
+  totalSections: z.number(),
+});
+
 // Step 1: Extract text from JSON file
-const extractJsonStep = new Step({
+const extractJsonStep = createStep({
   id: 'extract-json',
-  description: 'Extract text from arXiv paper JSON file',
-  execute: async ({ context, mastra }) => {
-    const { jsonFilePath } = context.machineContext as z.infer<
-      typeof workflowInputSchema
-    >;
+  inputSchema: workflowInputSchema,
+  outputSchema: z.object({
+    extractedText: z.string(),
+    totalSections: z.number(),
+    extractedSections: z.number(),
+    paperId: z.string(),
+  }),
+  execute: async ({ inputData, runtimeContext }) => {
+    const { jsonFilePath, paperId } = inputData;
 
     console.log(`\n📄 Step 1: Extracting text from ${jsonFilePath}...`);
 
-    const result = await mastra.getTool(jsonExtractorTool.id).execute({
+    const result = await jsonExtractorTool.execute({
       context: { filePath: jsonFilePath },
+      runtimeContext,
     });
 
     console.log(
@@ -34,18 +47,24 @@ const extractJsonStep = new Step({
       extractedText: result.extractedText,
       totalSections: result.totalSections,
       extractedSections: result.extractedSections,
+      paperId, // Pass through paperId
     };
   },
 });
 
 // Step 2: Generate image prompt using AI agent
-const generatePromptStep = new Step({
+const generatePromptStep = createStep({
   id: 'generate-prompt',
-  description: 'Generate detailed image prompt using Gemini Flash 2.5',
-  execute: async ({ context }) => {
-    const { extractedText } = context.stepResults['extract-json'] as {
-      extractedText: string;
-    };
+  inputSchema: z.object({
+    extractedText: z.string(),
+    paperId: z.string(),
+  }),
+  outputSchema: z.object({
+    imagePrompt: z.string(),
+    paperId: z.string(),
+  }),
+  execute: async ({ inputData }) => {
+    const { extractedText, paperId } = inputData;
 
     console.log('🤖 Step 2: Generating image prompt with Gemini Flash 2.5...');
     console.log(`Input text preview: ${extractedText.substring(0, 200)}...\n`);
@@ -61,31 +80,35 @@ const generatePromptStep = new Step({
 
     return {
       imagePrompt,
+      paperId, // Pass through paperId
     };
   },
 });
 
 // Step 3: Generate image with Imagen4
-const generateImageStep = new Step({
+const generateImageStep = createStep({
   id: 'generate-image',
-  description: 'Generate image using Imagen4',
-  execute: async ({ context, mastra }) => {
-    const { imagePrompt } = context.stepResults['generate-prompt'] as {
-      imagePrompt: string;
-    };
-    const { paperId } = context.machineContext as z.infer<
-      typeof workflowInputSchema
-    >;
+  inputSchema: z.object({
+    imagePrompt: z.string(),
+    paperId: z.string(),
+  }),
+  outputSchema: z.object({
+    imagePath: z.string(),
+    success: z.boolean(),
+  }),
+  execute: async ({ inputData, runtimeContext }) => {
+    const { imagePrompt, paperId } = inputData;
 
     console.log('🎨 Step 3: Generating image with Imagen4...');
 
     const outputPath = `./images/arxiv/${paperId}.png`;
 
-    const result = await mastra.getTool(imagen4GeneratorTool.id).execute({
+    const result = await imagen4GeneratorTool.execute({
       context: {
         prompt: imagePrompt,
         outputPath,
       },
+      runtimeContext,
     });
 
     console.log(`✓ Image generated successfully!`);
@@ -99,11 +122,25 @@ const generateImageStep = new Step({
 });
 
 // Create and export the workflow
-export const arxivImageWorkflow = new Workflow({
-  name: 'arxiv-image-generator',
-  triggerSchema: workflowInputSchema,
+export const arxivImageWorkflow = createWorkflow({
+  id: 'arxiv-image-generator',
+  inputSchema: workflowInputSchema,
+  outputSchema: workflowOutputSchema,
 })
-  .step(extractJsonStep)
-  .step(generatePromptStep)
-  .step(generateImageStep)
-  .commit();
+  .then(extractJsonStep)
+  .map(async ({ getStepResult }) => {
+    const extractResult = getStepResult(extractJsonStep);
+    return {
+      extractedText: extractResult.extractedText,
+      paperId: extractResult.paperId,
+    };
+  })
+  .then(generatePromptStep)
+  .map(async ({ getStepResult }) => {
+    const promptResult = getStepResult(generatePromptStep);
+    return {
+      imagePrompt: promptResult.imagePrompt,
+      paperId: promptResult.paperId,
+    };
+  })
+  .then(generateImageStep);

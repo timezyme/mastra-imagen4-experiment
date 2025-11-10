@@ -1,7 +1,5 @@
 import { Mastra } from '@mastra/core';
 import { config, validateConfig } from './config.js';
-import { jsonExtractorTool } from './tools/json-extractor.js';
-import { imagen4GeneratorTool } from './tools/imagen4-generator.js';
 import { promptGeneratorAgent } from './agents/prompt-generator.js';
 import { arxivImageWorkflow } from './workflows/arxiv-image-workflow.js';
 
@@ -20,12 +18,15 @@ async function main() {
 
   // Initialize Mastra
   const mastra = new Mastra({
-    tools: [jsonExtractorTool, imagen4GeneratorTool],
-    agents: [promptGeneratorAgent],
-    workflows: [arxivImageWorkflow],
+    agents: {
+      [promptGeneratorAgent.name]: promptGeneratorAgent,
+    },
+    workflows: {
+      [arxivImageWorkflow.id]: arxivImageWorkflow,
+    },
   });
 
-  console.log('✓ Mastra initialized with tools, agents, and workflows\n');
+  console.log('✓ Mastra initialized with agents and workflows\n');
 
   // Example usage - you can modify these parameters
   const jsonFilePath = process.env.JSON_FILE_PATH || './arxiv/2502.14902/sections-extract.json';
@@ -42,21 +43,31 @@ async function main() {
     console.log('Starting workflow...\n');
     console.log('═'.repeat(60));
 
-    // Run the workflow
-    const result = await mastra
-      .getWorkflow(arxivImageWorkflow.name)
-      .execute({
-        triggerData: {
-          jsonFilePath,
-          paperId,
-        },
-      });
+    // Get the workflow and create a run
+    const workflow = mastra.getWorkflow(arxivImageWorkflow.id);
+    const run = await workflow.createRunAsync();
+
+    // Execute the workflow
+    const result = await run.start({
+      inputData: {
+        jsonFilePath,
+        paperId,
+      },
+    });
 
     console.log('═'.repeat(60));
     console.log('\n✅ Workflow completed successfully!\n');
     console.log('📊 Results:');
-    console.log(`  - Image saved to: ${result.results['generate-image'].imagePath}`);
-    console.log(`  - Sections processed: ${result.results['extract-json'].extractedSections}/${result.results['extract-json'].totalSections}`);
+    console.log(`  - Status: ${result.status}`);
+
+    if (result.status === 'success') {
+      console.log(`  - Image saved to: ${result.result.imagePath}`);
+      console.log(`  - Sections processed: ${result.result.extractedSections}/${result.result.totalSections}`);
+    } else if (result.status === 'failed') {
+      console.error(`  - Error: ${result.error}`);
+    } else {
+      console.error(`  - Unexpected status: ${result.status}`);
+    }
 
   } catch (error) {
     console.error('\n❌ Workflow failed:', error instanceof Error ? error.message : error);

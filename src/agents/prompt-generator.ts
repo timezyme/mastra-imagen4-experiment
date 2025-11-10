@@ -1,6 +1,18 @@
 import { Agent } from '@mastra/core';
-import { vertex } from '@ai-sdk/google-vertex';
+import { createVertex } from '@ai-sdk/google-vertex';
 import { config } from '../config.js';
+
+// Create custom Vertex AI provider with credentials
+const vertexProvider = createVertex({
+  project: config.google.projectId,
+  location: config.google.region,
+  googleAuthOptions: {
+    credentials: {
+      client_email: config.google.clientEmail,
+      private_key: config.google.privateKey,
+    },
+  },
+});
 
 export const promptGeneratorAgent = new Agent({
   name: 'ImagePromptGenerator',
@@ -23,14 +35,5 @@ Example output format:
 "A futuristic digital landscape featuring [specific visual elements] with [lighting/atmosphere], rendered in [style]. In the foreground, [detailed element], while the background shows [detailed element]. The scene conveys [mood/feeling] through [visual techniques], with [color palette] dominating the composition."
 
 Return ONLY the image prompt text, without any preamble or explanation.`,
-  model: vertex('gemini-2.0-flash-exp', {
-    project: config.google.projectId,
-    location: config.google.region,
-    googleAuthOptions: {
-      credentials: {
-        client_email: config.google.clientEmail,
-        private_key: config.google.privateKey,
-      },
-    },
-  }),
+  model: vertexProvider('gemini-2.0-flash-exp'),
 });

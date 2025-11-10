@@ -18,9 +18,9 @@
     "ai-workflow"
   ],
   "dependencies": {
-    "@ai-sdk/google-vertex": "^1.0.9",
-    "@mastra/core": "^0.2.15",
-    "ai": "^4.0.43",
+    "@ai-sdk/google-vertex": "^3.0.61",
+    "@mastra/core": "^0.24.0",
+    "ai": "^5.0.90",
     "dotenv": "^16.4.7",
     "google-auth-library": "^9.15.0",
     "zod": "^3.24.1"

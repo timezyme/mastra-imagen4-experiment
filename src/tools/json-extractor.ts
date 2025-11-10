@@ -15,22 +15,27 @@ const ArxivJsonSchema = z.object({
   article_sections: z.array(ArticleSectionSchema),
 });
 
+// Define input and output schemas
+const inputSchema = z.object({
+  filePath: z.string().describe('Path to the JSON file to extract from'),
+  linesToExtract: z
+    .number()
+    .optional()
+    .describe('Number of lines to extract (defaults to config value)'),
+});
+
+const outputSchema = z.object({
+  extractedText: z.string().describe('Extracted text from the JSON file'),
+  totalSections: z.number().describe('Total number of sections in the file'),
+  extractedSections: z.number().describe('Number of sections extracted'),
+});
+
 export const jsonExtractorTool = createTool({
   id: 'json-extractor',
   description: `Extract the first N lines of text from an arXiv paper JSON file. Reads article sections and extracts highlights to create a text summary.`,
-  inputSchema: z.object({
-    filePath: z.string().describe('Path to the JSON file to extract from'),
-    linesToExtract: z
-      .number()
-      .optional()
-      .describe('Number of lines to extract (defaults to config value)'),
-  }),
-  outputSchema: z.object({
-    extractedText: z.string().describe('Extracted text from the JSON file'),
-    totalSections: z.number().describe('Total number of sections in the file'),
-    extractedSections: z.number().describe('Number of sections extracted'),
-  }),
-  execute: async ({ context }) => {
+  inputSchema,
+  outputSchema,
+  execute: async ({ context }: { context: z.infer<typeof inputSchema> }) => {
     const { filePath, linesToExtract = config.extraction.linesToExtract } = context;
 
     try {
